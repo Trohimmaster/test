@@ -32,3 +32,6 @@
 - <a href="{{ .Annotations.dashboard }}">Open Dashboard</a><br>
 <hr>
 {{ end }}
+
+
+<b>Dashboard:</b> <a href="{{ index .Annotations "dashboard" }}">{{ index .Annotations "dashboard" }}</a><br>
