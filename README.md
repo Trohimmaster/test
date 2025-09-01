@@ -48,39 +48,42 @@
 
 
 {{ range .Alerts }}
-{{ if eq .Status "firing" }}
-<div style="background-color:#FFA500; color:white; padding:8px; font-weight:bold; border-radius:5px;">
-🚨 Alert Firing
-</div>
-{{ else if eq .Status "resolved" }}
-<div style="background-color:#32CD32; color:white; padding:8px; font-weight:bold; border-radius:5px;">
-✅ Alert Resolved
-</div>
+  {{ if eq .Status "firing" }}
+    <div style="background-color:#FFA500; color:white; padding:8px; font-weight:bold; border-radius:5px;">
+      🚨 Alert Firing
+    </div>
+  {{ else if eq .Status "resolved" }}
+    <div style="background-color:#32CD32; color:white; padding:8px; font-weight:bold; border-radius:5px;">
+      ✅ Alert Resolved
+    </div>
+  {{ end }}
+
+  <br>
+
+  <table style="border-collapse:collapse;">
+    <tr><td><b>Alert:</b></td><td>{{ .Labels.alertname }}</td></tr>
+    <tr><td><b>Env:</b></td><td>{{ .Labels.env }}</td></tr>
+    <tr><td><b>Host:</b></td><td>{{ .Labels.hostalias }}</td></tr>
+    <tr><td><b>Severity:</b></td><td>{{ .Labels.severity }}</td></tr>
+  </table>
+
+  <br>
+
+  <b>Details:</b>
+  <ul>
+    {{ if .Annotations.summary }}<li>{{ .Annotations.summary }}</li>{{ end }}
+    {{ if .Annotations.description }}<li>{{ .Annotations.description }}</li>{{ end }}
+  </ul>
+
+  {{ if .Annotations.dashboard }}
+    <a href="{{ .Annotations.dashboard }}" style="display:inline-block; padding:6px 12px; background:#1f78c1; color:white; text-decoration:none; border-radius:4px;">
+      🔎 Open Dashboard
+    </a>
+  {{ end }}
+
+  <hr>
 {{ end }}
 
-<br>
-
-<table style="border-collapse:collapse;">
-  <tr><td><b>Alert:</b></td><td>{{ .Labels.alertname }}</td></tr>
-  <tr><td><b>Env:</b></td><td>{{ .Labels.env }}</td></tr>
-  <tr><td><b>Host:</b></td><td>{{ .Labels.hostalias }}</td></tr>
-  <tr><td><b>Severity:</b></td><td>{{ .Labels.severity }}</td></tr>
-</table>
-
-<br>
-
-<b>Details:</b>
-<ul>
-  <li>{{ .Annotations.summary }}</li>
-  <li>{{ .Annotations.description }}</li>
-</ul>
-
-<a href="{{ .Annotations.dashboard }}" style="display:inline-block; padding:6px 12px; background:#1f78c1; color:white; text-decoration:none; border-radius:4px;">
-🔎 Open Dashboard
-</a>
-
-<hr>
-{{ end }}
 
 
 
