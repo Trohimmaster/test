@@ -151,6 +151,26 @@ Status: {{ .Status }} | Alert: {{ .Labels.alertname }}
 
 
 
+{{ range .Alerts }}
+{{ if eq .Status "firing" }}
+<b>🚨 Alert Firing</b>
+{{ else if eq .Status "resolved" }}
+<b>✅ Alert Resolved</b>
+{{ else }}
+<b>ℹ️ Alert {{ .Status }}</b>
+{{ end }}
+
+<b>Alert:</b> {{ .Labels.alertname }}<br>
+<b>Env:</b> {{ .Labels.env }}<br>
+<b>Host:</b> {{ .Labels.hostalias }}<br>
+<b>Severity:</b> {{ .Labels.severity }}<br>
+
+{{ if .Annotations.summary }}<b>Summary:</b> {{ .Annotations.summary }}<br>{{ end }}
+{{ if .Annotations.description }}<b>Description:</b> {{ .Annotations.description }}<br>{{ end }}
+{{ if .Annotations.dashboard }}<a href="{{ .Annotations.dashboard }}">🔎 Open Dashboard</a><br>{{ end }}
+
+<hr>
+{{ end }}
 
 
 
