@@ -1,20 +1,53 @@
-{{ range .Alerts }}
-<b>Status:</b> {{ .Status }}<br>
-<b>Alert:</b> {{ .Labels.alertname }}<br>
-<b>Labels:</b><br>
-<ul>
-  {{ range .Labels.SortedPairs }}
-    <li>{{ .Name }} = {{ .Value }}</li>
-  {{ end }}
-</ul>
-<b>Annotations:</b><br>
-<ul>
-  {{ range .Annotations.SortedPairs }}
-    <li>{{ .Name }} = {{ .Value }}</li>
-  {{ end }}
-</ul>
-<hr>
-{{ end }}
+#!/usr/bin/env bash
+
+# Configuration
+GRAFANA_URL="http://grafana.example.com"    # Your Grafana instance URL
+API_KEY="YOUR_API_KEY_HERE"                 # API key with Admin or Editor role
+FOLDER_NAME="prod"                          # Folder name to export dashboards from
+EXPORT_DIR="./dashboards"                   # Directory to save JSON files
+
+mkdir -p "$EXPORT_DIR"
+
+# 1. Get the folder ID by name
+echo "Looking up folder '$FOLDER_NAME'..."
+FOLDER_ID=$(curl -s -H "Authorization: Bearer $API_KEY" "$GRAFANA_URL/api/folders" \
+  | jq -r ".[] | select(.title==\"$FOLDER_NAME\") | .id")
+
+if [[ -z "$FOLDER_ID" ]]; then
+  echo "Folder '$FOLDER_NAME' not found."
+  exit 1
+fi
+
+echo "Found folder_id: $FOLDER_ID"
+
+# 2. Get the list of dashboards in that folder
+echo "Fetching dashboards from folder..."
+DASHBOARDS=$(curl -s -H "Authorization: Bearer $API_KEY" \
+  "$GRAFANA_URL/api/search?folderIds=$FOLDER_ID&type=dash-db" \
+  | jq -c '.[]')
+
+if [[ -z "$DASHBOARDS" ]]; then
+  echo "No dashboards found in folder '$FOLDER_NAME'."
+  exit 0
+fi
+
+# 3. Export each dashboard to a JSON file
+echo "Exporting dashboards..."
+echo "$DASHBOARDS" | while read -r DASH; do
+  UID=$(echo "$DASH" | jq -r '.uid')
+  TITLE=$(echo "$DASH" | jq -r '.title' | tr ' ' '_' | tr -dc '[:alnum:]_')
+  FILE="$EXPORT_DIR/${FOLDER_NAME}-${TITLE}.json"
+
+  curl -s -H "Authorization: Bearer $API_KEY" "$GRAFANA_URL/api/dashboards/uid/$UID" \
+    | jq '.dashboard' > "$FILE"
+
+  echo "Saved: $FILE"
+done
+
+echo "Export complete."
+
+
+
 
 
 
