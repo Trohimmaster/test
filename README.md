@@ -20,7 +20,7 @@ fi
 
 echo "Found folder_id: $FOLDER_ID"
 
-# 2. Get the list of dashboards in that folder
+# 2. Get the list of dashboards in that folder (compact JSON objects, one per line)
 echo "Fetching dashboards from folder..."
 DASHBOARDS=$(curl -s -H "Authorization: Bearer $API_KEY" \
   "$GRAFANA_URL/api/search?folderIds=$FOLDER_ID&type=dash-db" \
@@ -33,18 +33,23 @@ fi
 
 # 3. Export each dashboard to a JSON file
 echo "Exporting dashboards..."
-echo "$DASHBOARDS" | while read -r DASH; do
-  UID=$(echo "$DASH" | jq -r '.uid')
+while read -r DASH; do
+  DASH_UID=$(echo "$DASH" | jq -r '.uid')
   TITLE=$(echo "$DASH" | jq -r '.title' | tr ' ' '_' | tr -dc '[:alnum:]_')
   FILE="$EXPORT_DIR/${FOLDER_NAME}-${TITLE}.json"
 
-  curl -s -H "Authorization: Bearer $API_KEY" "$GRAFANA_URL/api/dashboards/uid/$UID" \
-    | jq '.dashboard' > "$FILE"
+  curl -s -H "Authorization: Bearer $API_KEY" \
+    "$GRAFANA_URL/api/dashboards/uid/$DASH_UID" \
+    | jq '.dashboard' > "$FILE" || {
+      echo "Failed to download dashboard uid=${DASH_UID}"
+      continue
+    }
 
   echo "Saved: $FILE"
-done
+done <<< "$DASHBOARDS"
 
 echo "Export complete."
+
 
 
 
