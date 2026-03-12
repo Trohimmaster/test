@@ -216,6 +216,54 @@ Status: {{ .Status }} | Alert: {{ .Labels.alertname }}
 
 
 
+    Created by Michal Bodansky (EXT), last modified about an hour ago
+
+nginx setup
+
+custom configuration file for nginx extending app definition. Destination is setup by gitlab.rb
+gitlab.rb
+nginx['custom_gitlab_server_config'] = "include /etc/gitlab/nginx/{{ endpoint_sub_path }}/*.conf;"
+
+
+gitlab_gitaly_tls - it has ilb endpoint as alternative. the naming is misleading.
+verify proxy_set_header setup so it correctly provide real ip address of client not haproxy ip 
+
+location /-/{{ endpoint_sub_path }} {
+    proxy_cache off;
+ 
+    proxy_set_header       X-Forwarded-Host $host;
+    proxy_set_header       X-Forwarded-Server $host;
+    proxy_set_header       X-Forwarded-For $proxy_add_x_forwarded_for;
+ 
+    proxy_ssl_certificate {{ gitlab_gitaly_tls.directory }}/{{ gitlab_gitaly_tls.filename }}.crt;
+    proxy_ssl_certificate_key {{ gitlab_gitaly_tls.directory }}/{{ gitlab_gitaly_tls.filename }}.key;
+ 
+    rewrite ^/-/{{ endpoint_sub_path }}(.*)$ $1 break;
+    proxy_pass {{ ilb_dns }}:{{ endpoint_port }};
+}
+ilb setup
+
+transparent load balancing. only tcp mode. no need to do tls termination 
+frontend internal-{{ endpoint_sub_path }}-tcp-in
+    bind *:{{ endpoint_port }}
+    mode tcp
+    option tcplog
+    option clitcpka
+ 
+    default_backend internal-{{ endpoint_sub_path }}-backend
+ 
+backend internal-{{ endpoint_sub_path }}-backend
+    mode tcp
+    option tcp-check
+    option srvtcpka
+ 
+    server dev-sero-run1 {{ full_fqdn_target_server }}:{{ target_app_endpoint_port }} check
+    server dev-sero-run2 {{ full_fqdn_target_server }}:{{ target_app_endpoint_port }} check
+without primary dns
+
+just configure ilb. nginx is only use in case you need to hide it behind primary dns.
+
+
 
 
 
